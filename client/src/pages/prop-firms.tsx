@@ -29,7 +29,8 @@ import {
   Wallet,
   CreditCard,
   ChevronRight,
-  History
+  History,
+  X
 } from "lucide-react";
 import {
   Dialog,
@@ -40,6 +41,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -110,6 +118,8 @@ const initialAccounts = [
 export default function PropFirms() {
   const [accounts, setAccounts] = useState(initialAccounts);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState(null);
+  const [editData, setEditData] = useState({ equity: 0, payouts: 0 });
 
   // Stats Calculation
   const totalSpent = accounts.reduce((acc, curr) => acc + curr.cost, 0);
@@ -122,6 +132,20 @@ export default function PropFirms() {
   const passedCount = accounts.filter(a => a.status === "PASSED").length;
   const failedCount = accounts.filter(a => a.status === "FAILED").length;
   const activeCount = accounts.filter(a => a.status === "ACTIVE").length;
+
+  const openDetails = (account) => {
+    setSelectedAccount(account);
+    setEditData({ equity: account.equity, payouts: account.payouts });
+  };
+
+  const saveDetails = () => {
+    setAccounts(accounts.map(acc => 
+      acc.id === selectedAccount.id 
+        ? { ...acc, equity: parseInt(editData.equity), payouts: parseInt(editData.payouts) }
+        : acc
+    ));
+    setSelectedAccount(null);
+  };
 
   return (
     <Layout>
@@ -331,7 +355,7 @@ export default function PropFirms() {
                           </div>
                        </CardContent>
                        <CardFooter className="bg-muted/20 pt-3 pb-3 flex justify-between">
-                          <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground hover:text-foreground px-0">
+                          <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground hover:text-foreground px-0" onClick={() => openDetails(account)}>
                              View Details
                           </Button>
                           {account.status === 'PASSED' && (
@@ -391,6 +415,94 @@ export default function PropFirms() {
                </div>
            </TabsContent>
         </Tabs>
+
+        {/* Account Details Sheet */}
+        <Sheet open={!!selectedAccount} onOpenChange={(open) => !open && setSelectedAccount(null)}>
+          <SheetContent className="w-full sm:max-w-md">
+            <SheetHeader>
+              <div className="flex items-center justify-between">
+                <SheetTitle className="text-2xl">{selectedAccount?.firm}</SheetTitle>
+                <Badge className={`${selectedAccount?.status === 'PASSED' ? 'bg-success text-success-foreground' : 'bg-primary text-primary-foreground'}`}>
+                  {selectedAccount?.stage}
+                </Badge>
+              </div>
+              <SheetDescription>
+                Account #{selectedAccount?.accountNumber}
+              </SheetDescription>
+            </SheetHeader>
+
+            <div className="space-y-6 py-6">
+              {/* Read-only info */}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Type</p>
+                  <p className="font-medium">{selectedAccount?.type}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Cost</p>
+                  <p className="font-mono">${selectedAccount?.cost}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Initial Balance</p>
+                  <p className="font-mono">${selectedAccount?.size.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Start Date</p>
+                  <p className="font-mono text-sm">{selectedAccount?.startDate}</p>
+                </div>
+              </div>
+
+              {/* Editable fields */}
+              <div className="space-y-4 border-t border-border pt-6">
+                <div className="space-y-2">
+                  <Label htmlFor="equity">Current Balance ($)</Label>
+                  <Input 
+                    id="equity"
+                    type="number" 
+                    value={editData.equity}
+                    onChange={(e) => setEditData({...editData, equity: e.target.value})}
+                    className="font-mono"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="payouts">Total Payouts Received ($)</Label>
+                  <Input 
+                    id="payouts"
+                    type="number" 
+                    value={editData.payouts}
+                    onChange={(e) => setEditData({...editData, payouts: e.target.value})}
+                    className="font-mono"
+                  />
+                </div>
+
+                {/* Display calculated values */}
+                <div className="p-4 bg-muted/30 rounded-lg space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Gain/Loss:</span>
+                    <span className={`font-mono font-bold ${(parseInt(editData.equity) - selectedAccount?.size) >= 0 ? 'text-success' : 'text-destructive'}`}>
+                      {(parseInt(editData.equity) - selectedAccount?.size) >= 0 ? '+' : ''}${(parseInt(editData.equity) - selectedAccount?.size).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Net P&L:</span>
+                    <span className={`font-mono font-bold ${(parseInt(editData.equity) - selectedAccount?.size + parseInt(editData.payouts) - selectedAccount?.cost) >= 0 ? 'text-success' : 'text-destructive'}`}>
+                      {(parseInt(editData.equity) - selectedAccount?.size + parseInt(editData.payouts) - selectedAccount?.cost) >= 0 ? '+' : ''}${(parseInt(editData.equity) - selectedAccount?.size + parseInt(editData.payouts) - selectedAccount?.cost).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setSelectedAccount(null)} className="flex-1">
+                Cancel
+              </Button>
+              <Button onClick={saveDetails} className="flex-1">
+                Save Changes
+              </Button>
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
     </Layout>
   );
