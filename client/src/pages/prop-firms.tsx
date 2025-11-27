@@ -120,6 +120,9 @@ export default function PropFirms() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [editData, setEditData] = useState({ equity: 0, payouts: 0 });
+  const [payoutAccount, setPayoutAccount] = useState(null);
+  const [payoutAmount, setPayoutAmount] = useState("");
+  const [payoutBank, setPayoutBank] = useState("");
 
   // Stats Calculation
   const totalSpent = accounts.reduce((acc, curr) => acc + curr.cost, 0);
@@ -145,6 +148,23 @@ export default function PropFirms() {
         : acc
     ));
     setSelectedAccount(null);
+  };
+
+  const requestPayout = (account) => {
+    setPayoutAccount(account);
+    setPayoutAmount("");
+    setPayoutBank("");
+  };
+
+  const confirmPayout = () => {
+    if (payoutAmount && payoutBank) {
+      setAccounts(accounts.map(acc =>
+        acc.id === payoutAccount.id
+          ? { ...acc, payouts: acc.payouts + parseInt(payoutAmount) }
+          : acc
+      ));
+      setPayoutAccount(null);
+    }
   };
 
   return (
@@ -359,7 +379,7 @@ export default function PropFirms() {
                              View Details
                           </Button>
                           {account.status === 'PASSED' && (
-                             <Button size="sm" className="h-8 text-xs gap-1 bg-success hover:bg-success/80 text-success-foreground">
+                             <Button size="sm" className="h-8 text-xs gap-1 bg-success hover:bg-success/80 text-success-foreground" onClick={() => requestPayout(account)}>
                                 <DollarSign className="h-3 w-3" />
                                 Request Payout
                              </Button>
@@ -503,6 +523,58 @@ export default function PropFirms() {
             </div>
           </SheetContent>
         </Sheet>
+
+        {/* Payout Request Dialog */}
+        <Dialog open={!!payoutAccount} onOpenChange={(open) => !open && setPayoutAccount(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Request Payout - {payoutAccount?.firm}</DialogTitle>
+              <DialogDescription>
+                Enter your payout details for this funded account.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <p className="text-sm text-muted-foreground mb-1">Available Balance</p>
+                <p className="text-2xl font-mono font-bold text-success">${payoutAccount?.equity.toLocaleString()}</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="payout-amount">Payout Amount ($)</Label>
+                <Input
+                  id="payout-amount"
+                  type="number"
+                  placeholder="0.00"
+                  value={payoutAmount}
+                  onChange={(e) => setPayoutAmount(e.target.value)}
+                  className="font-mono"
+                  max={payoutAccount?.equity}
+                />
+                <p className="text-xs text-muted-foreground">Maximum: ${payoutAccount?.equity.toLocaleString()}</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="payout-bank">Withdraw To</Label>
+                <Select value={payoutBank} onValueChange={setPayoutBank}>
+                  <SelectTrigger id="payout-bank">
+                    <SelectValue placeholder="Select bank account" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="primary">Primary Bank Account</SelectItem>
+                    <SelectItem value="secondary">Secondary Bank Account</SelectItem>
+                    <SelectItem value="crypto">Crypto Wallet</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setPayoutAccount(null)}>
+                Cancel
+              </Button>
+              <Button onClick={confirmPayout} disabled={!payoutAmount || !payoutBank} className="bg-success hover:bg-success/80">
+                Confirm Payout
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
