@@ -10,12 +10,14 @@ import Journal from "@/pages/journal";
 import Calendar from "@/pages/calendar";
 import Analytics from "@/pages/analytics";
 import Settings from "@/pages/settings";
+import PropFirms from "@/pages/prop-firms";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/journal" component={Journal} />
+      <Route path="/prop-firms" component={PropFirms} />
       <Route path="/calendar" component={Calendar} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/settings" component={Settings} />
@@ -26,7 +28,7 @@ function Router() {
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="dark" attribute="class">
+    <ThemeProvider defaultTheme="dark" attribute="class" enableSystem={false}>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />

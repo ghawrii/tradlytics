@@ -24,7 +24,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 
+import { useTheme } from "next-themes";
+
 export default function Settings() {
+  const { theme, setTheme } = useTheme();
   // Mock state for setups management
   const [setups, setSetups] = useState([
     { id: 1, name: "Break & Retest", color: "bg-blue-500" },
@@ -151,9 +154,12 @@ export default function Settings() {
                      <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
                           <Label>Dark Mode</Label>
-                          <p className="text-sm text-muted-foreground">Enable dark mode for the dashboard.</p>
+                          <p className="text-sm text-muted-foreground">Switch between light and dark themes.</p>
                         </div>
-                        <Switch defaultChecked />
+                        <Switch 
+                          checked={theme === 'dark'} 
+                          onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')} 
+                        />
                      </div>
                   </CardContent>
                 </Card>

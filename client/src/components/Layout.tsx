@@ -7,7 +7,8 @@ import {
   LogOut,
   TrendingUp,
   TrendingDown,
-  Plus
+  Plus,
+  Trophy
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
@@ -19,6 +20,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const navigation = [
     { name: "Dashboard", href: "/", icon: LayoutDashboard },
     { name: "Journal", href: "/journal", icon: BookOpen },
+    { name: "Prop Firms", href: "/prop-firms", icon: Trophy },
     { name: "Analytics", href: "/analytics", icon: BarChart2 },
     { name: "Calendar", href: "/calendar", icon: CalendarIcon },
   ];
