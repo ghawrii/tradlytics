@@ -191,7 +191,7 @@ export default function PropFirms() {
         </div>
 
         {/* Performance Overview Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Active Capital</CardTitle>
@@ -209,7 +209,7 @@ export default function PropFirms() {
 
           <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Net Payouts</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Payouts</CardTitle>
               <DollarSign className="h-4 w-4 text-success" />
             </CardHeader>
             <CardContent>
@@ -219,7 +219,22 @@ export default function PropFirms() {
                   </div>
                </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Total withdrawn
+                Gross profit withdrawn
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Amount Spent</CardTitle>
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold font-mono text-foreground">
+                ${totalSpent.toLocaleString()}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Total evaluation costs
               </p>
             </CardContent>
           </Card>
@@ -234,7 +249,7 @@ export default function PropFirms() {
                 {roi.toFixed(1)}%
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Total Spent: ${totalSpent.toLocaleString()}
+                Return on evaluations
               </p>
             </CardContent>
           </Card>
