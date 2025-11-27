@@ -67,10 +67,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </div>
            </div>
            
-           <Button variant="outline" className="w-full justify-start text-muted-foreground hover:text-foreground">
-             <Settings className="h-4 w-4 mr-2" />
-             Settings
-           </Button>
+           <Link href="/settings">
+             <Button variant="outline" className="w-full justify-start text-muted-foreground hover:text-foreground cursor-pointer">
+               <Settings className="h-4 w-4 mr-2" />
+               Settings
+             </Button>
+           </Link>
         </div>
       </div>
 

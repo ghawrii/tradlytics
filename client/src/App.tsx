@@ -9,6 +9,7 @@ import Dashboard from "@/pages/dashboard";
 import Journal from "@/pages/journal";
 import Calendar from "@/pages/calendar";
 import Analytics from "@/pages/analytics";
+import Settings from "@/pages/settings";
 
 function Router() {
   return (
@@ -17,6 +18,7 @@ function Router() {
       <Route path="/journal" component={Journal} />
       <Route path="/calendar" component={Calendar} />
       <Route path="/analytics" component={Analytics} />
+      <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>
   );
