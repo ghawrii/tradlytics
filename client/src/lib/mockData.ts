@@ -17,6 +17,9 @@ export interface Trade {
   setup: string;
   notes: string;
   screenshots: string[];
+  accountType: "LIVE" | "PROP_FIRM";
+  accountId?: number;
+  accountFirm?: string;
 }
 
 const setups = ["Break & Retest", "Supply Zone", "Demand Zone", "Trendline Bounce", "Gap Fill"];
@@ -53,6 +56,10 @@ function generateMockTrades(count: number): Trade[] {
     const tradeScreenshots = Math.random() > 0.7 ? [charts[Math.floor(Math.random() * charts.length)]] : [];
     if (Math.random() > 0.9) tradeScreenshots.push(charts[Math.floor(Math.random() * charts.length)]);
 
+    const propFirms = ["FTMO", "Apex", "TopStep", "MyForexFunds"];
+    const isLive = Math.random() > 0.4; // 60% live, 40% prop firm
+    const firm = propFirms[Math.floor(Math.random() * propFirms.length)];
+
     trades.push({
       id: `TRD-${1000 + i}`,
       symbol,
@@ -66,7 +73,10 @@ function generateMockTrades(count: number): Trade[] {
       status: pnl > 0 ? "WIN" : pnl < 0 ? "LOSS" : "BE",
       setup,
       notes: "Entry based on 15m candle close above VWAP. Strong volume confirmation. \n\nManaged risk by moving stop to breakeven after 1R.",
-      screenshots: tradeScreenshots
+      screenshots: tradeScreenshots,
+      accountType: isLive ? "LIVE" : "PROP_FIRM",
+      accountId: isLive ? undefined : Math.floor(Math.random() * 4) + 1,
+      accountFirm: isLive ? undefined : firm
     });
   }
   return trades.sort((a, b) => new Date(b.entryDate).getTime() - new Date(a.entryDate).getTime());

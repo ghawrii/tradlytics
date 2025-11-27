@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Search, Filter, Download, Plus, ChevronRight, ImageIcon } from "lucide-react";
+import { propFirms } from "@/lib/propFirmsData";
 import {
   Sheet,
   SheetContent,
@@ -36,6 +37,8 @@ export default function Journal() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
+  const [accountType, setAccountType] = useState("LIVE");
+  const [selectedPropFirm, setSelectedPropFirm] = useState("");
 
   const filteredTrades = mockTrades.filter(trade => {
     const matchesSearch = trade.symbol.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -73,6 +76,35 @@ export default function Journal() {
                    </SheetDescription>
                  </SheetHeader>
                  <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                      <Label>Account Type</Label>
+                      <Select value={accountType} onValueChange={setAccountType}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="LIVE">Live Account</SelectItem>
+                          <SelectItem value="PROP_FIRM">Prop Firm Account</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {accountType === "PROP_FIRM" && (
+                      <div className="space-y-2">
+                        <Label>Select Prop Firm Account</Label>
+                        <Select value={selectedPropFirm} onValueChange={setSelectedPropFirm}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select account" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {propFirms.map(firm => (
+                              <SelectItem key={firm.id} value={firm.id.toString()}>
+                                {firm.firm} - {firm.type} - #{firm.accountNumber}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Symbol</Label>
@@ -159,6 +191,7 @@ export default function Journal() {
                 <TableHead>Symbol</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Setup</TableHead>
+                <TableHead>Account</TableHead>
                 <TableHead className="text-right">Entry</TableHead>
                 <TableHead className="text-right">Exit</TableHead>
                 <TableHead className="text-right">P&L</TableHead>
@@ -190,6 +223,11 @@ export default function Journal() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">{trade.setup}</TableCell>
+                  <TableCell>
+                    <Badge variant={trade.accountType === "LIVE" ? "outline" : "secondary"} className="text-xs">
+                      {trade.accountType === "LIVE" ? "Live" : trade.accountFirm}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="text-right font-mono">{trade.entryPrice}</TableCell>
                   <TableCell className="text-right font-mono">{trade.exitPrice}</TableCell>
                   <TableCell className={`text-right font-mono font-bold ${trade.pnl >= 0 ? 'text-success' : 'text-destructive'}`}>
@@ -254,6 +292,14 @@ export default function Journal() {
                  <div className="col-span-3 pt-2 mt-2 border-t border-border/50">
                     <div className="text-xs text-muted-foreground mb-1">Setup Strategy</div>
                     <div className="font-medium">{selectedTrade.setup}</div>
+                 </div>
+                 <div className="col-span-3 pt-2 border-t border-border/50">
+                    <div className="text-xs text-muted-foreground mb-1">Trading Account</div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={selectedTrade.accountType === "LIVE" ? "outline" : "secondary"}>
+                        {selectedTrade.accountType === "LIVE" ? "Live Account" : `${selectedTrade.accountFirm} (Prop Firm)`}
+                      </Badge>
+                    </div>
                  </div>
               </div>
 
