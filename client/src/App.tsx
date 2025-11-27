@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Journal from "@/pages/journal";
 import Calendar from "@/pages/calendar";
+import Analytics from "@/pages/analytics";
 
 function Router() {
   return (
@@ -14,6 +15,7 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/journal" component={Journal} />
       <Route path="/calendar" component={Calendar} />
+      <Route path="/analytics" component={Analytics} />
       <Route component={NotFound} />
     </Switch>
   );

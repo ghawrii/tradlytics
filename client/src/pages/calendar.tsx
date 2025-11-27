@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Layout from "@/components/Layout";
 import { mockTrades } from "@/lib/mockData";
 import { 
@@ -36,6 +36,19 @@ export default function Calendar() {
     
     return { dayPnl, tradeCount: dayTrades.length, winCount, lossCount };
   };
+  
+  // Calculate Monthly Total PnL
+  const monthlyPnl = useMemo(() => {
+     const start = startOfMonth(currentMonth);
+     const end = endOfMonth(currentMonth);
+     
+     return mockTrades
+       .filter(t => {
+          const tradeDate = new Date(t.entryDate);
+          return tradeDate >= start && tradeDate <= end;
+       })
+       .reduce((acc, t) => acc + t.pnl, 0);
+  }, [currentMonth]);
 
   return (
     <Layout>
@@ -45,16 +58,27 @@ export default function Calendar() {
             <h1 className="text-3xl font-bold tracking-tight text-foreground">Calendar</h1>
             <p className="text-muted-foreground">Daily P&L performance view.</p>
            </div>
-           <div className="flex items-center gap-4">
-              <Button variant="outline" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <div className="font-bold text-lg min-w-[140px] text-center">
-                {format(currentMonth, "MMMM yyyy")}
+           
+           <div className="flex items-center gap-6">
+              {/* Monthly PnL Display */}
+              <div className="flex flex-col items-end mr-4 border-r border-border pr-6">
+                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Monthly P&L</span>
+                 <span className={`text-2xl font-mono font-bold ${monthlyPnl >= 0 ? 'text-success' : 'text-destructive'}`}>
+                    {monthlyPnl >= 0 ? '+' : ''}${monthlyPnl.toLocaleString()}
+                 </span>
               </div>
-              <Button variant="outline" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+
+              <div className="flex items-center gap-4">
+                  <Button variant="outline" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="font-bold text-lg min-w-[140px] text-center">
+                    {format(currentMonth, "MMMM yyyy")}
+                  </div>
+                  <Button variant="outline" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+               </div>
            </div>
         </div>
 
