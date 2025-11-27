@@ -114,7 +114,7 @@ export default function PropFirms() {
   // Stats Calculation
   const totalSpent = accounts.reduce((acc, curr) => acc + curr.cost, 0);
   const totalPayouts = accounts.reduce((acc, curr) => acc + curr.payouts, 0);
-  const roi = ((totalPayouts - totalSpent) / totalSpent) * 100;
+  const roi = totalSpent > 0 ? ((totalPayouts - totalSpent) / totalSpent) * 100 : 0;
   const activeCapital = accounts
     .filter(a => a.status === "PASSED" || a.status === "ACTIVE")
     .reduce((acc, curr) => acc + curr.size, 0);
