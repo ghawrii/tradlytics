@@ -8,9 +8,8 @@ import NotFound from "@/pages/not-found";
 import Overview from "@/pages/overview";
 import Dashboard from "@/pages/dashboard";
 import Journal from "@/pages/journal";
-import Analytics from "@/pages/analytics";
 import Settings from "@/pages/settings";
-import PropFirms from "@/pages/prop-firms";
+import PropFirms from "@/pages/prop-farms";
 
 function Router() {
   return (
@@ -19,7 +18,6 @@ function Router() {
       <Route path="/live-accounts" component={Dashboard} />
       <Route path="/journal" component={Journal} />
       <Route path="/prop-firms" component={PropFirms} />
-      <Route path="/analytics" component={Analytics} />
       <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>

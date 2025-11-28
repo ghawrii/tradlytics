@@ -470,40 +470,6 @@ export default function Analytics() {
             </Card>
           </TabsContent>
 
-          {/* ============ ACCOUNTS TAB ============ */}
-          <TabsContent value="accounts" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              {accountTypeData.map((acc) => (
-                <Card key={acc.name} className="bg-card/50 border-border/50 backdrop-blur-sm">
-                  <CardHeader>
-                    <CardTitle>{acc.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Total PnL</p>
-                        <p className={`text-xl font-bold font-mono ${acc.pnl >= 0 ? 'text-success' : 'text-destructive'}`}>
-                          {acc.pnl >= 0 ? '+' : ''}${acc.pnl.toLocaleString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Win Rate</p>
-                        <p className="text-xl font-bold font-mono">{acc.winRate}%</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Trades</p>
-                        <p className="text-xl font-bold font-mono">{acc.count}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Avg Trade</p>
-                        <p className="text-xl font-bold font-mono">${acc.avgPnl}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
 
           {/* ============ SYMBOLS TAB ============ */}
           <TabsContent value="symbols" className="space-y-4">

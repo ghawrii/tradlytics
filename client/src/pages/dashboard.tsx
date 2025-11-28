@@ -8,7 +8,7 @@ import {
   Tooltip, 
   ResponsiveContainer 
 } from "recharts";
-import { ArrowUpRight, ArrowDownRight, DollarSign, Activity, Target, TrendingUp, ChevronLeft, ChevronRight, Plus, Flag } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, DollarSign, Activity, Target, TrendingUp, ChevronLeft, ChevronRight, Plus, Flag, BarChart3, Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mockTrades } from "@/lib/mockData";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, getDay, addMonths, subMonths } from "date-fns";
 import Layout from "@/components/Layout";
@@ -26,6 +27,21 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import {
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  Legend,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer
+} from "recharts";
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -98,6 +114,57 @@ export default function Dashboard() {
 
   const goalProgress = liveGoal ? Math.min((monthlyPnl / liveGoal) * 100, 100) : 0;
   const goalAchieved = liveGoal && monthlyPnl >= liveGoal;
+
+  // Analytics Data for LIVE accounts only
+  const liveWinTrades = liveTrades.filter(t => t.pnl > 0);
+  const liveLossTrades = liveTrades.filter(t => t.pnl < 0);
+  const liveAvgWin = liveWinTrades.length > 0 ? liveWinTrades.reduce((acc, t) => acc + t.pnl, 0) / liveWinTrades.length : 0;
+  const liveAvgLoss = liveLossTrades.length > 0 ? liveLossTrades.reduce((acc, t) => acc + t.pnl, 0) / liveLossTrades.length : 0;
+
+  // Setup stats
+  const setupStats = liveTrades.reduce((acc: any, trade) => {
+    if (!acc[trade.setup]) {
+      acc[trade.setup] = { name: trade.setup, wins: 0, total: 0, pnl: 0 };
+    }
+    acc[trade.setup].total += 1;
+    acc[trade.setup].pnl += trade.pnl;
+    if (trade.pnl > 0) acc[trade.setup].wins += 1;
+    return acc;
+  }, {});
+
+  const setupData = Object.values(setupStats).map((s: any) => ({
+    ...s,
+    winRate: Math.round((s.wins / s.total) * 100)
+  })).sort((a: any, b: any) => b.pnl - a.pnl);
+
+  // Symbol stats
+  const symbolStats = liveTrades.reduce((acc: any, trade) => {
+    if (!acc[trade.symbol]) {
+      acc[trade.symbol] = { name: trade.symbol, pnl: 0, count: 0, wins: 0 };
+    }
+    acc[trade.symbol].pnl += trade.pnl;
+    acc[trade.symbol].count += 1;
+    if (trade.pnl > 0) acc[trade.symbol].wins += 1;
+    return acc;
+  }, {});
+
+  const symbolData = Object.values(symbolStats).map((s: any) => ({ 
+    ...s, 
+    winRate: Math.round((s.wins / s.count) * 100) 
+  })).sort((a: any, b: any) => b.pnl - a.pnl);
+
+  // Cumulative PnL
+  const cumulativeLiveData = liveTrades
+    .sort((a, b) => new Date(a.entryDate).getTime() - new Date(b.entryDate).getTime())
+    .reduce((acc: any[], trade, index) => {
+      const cumulative = (acc[index - 1]?.cumPnl || 0) + trade.pnl;
+      acc.push({
+        date: format(new Date(trade.entryDate), "MMM dd"),
+        cumPnl: cumulative,
+        tradeNum: index + 1
+      });
+      return acc;
+    }, []);
 
   return (
     <Layout>
@@ -175,6 +242,14 @@ export default function Dashboard() {
             </DialogContent>
           </Dialog>
         </div>
+
+        <Tabs defaultValue="overview" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-8">
 
         {/* Monthly Goal Section */}
         {liveGoal && (
@@ -438,6 +513,102 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
+                <CardContent className="pt-6">
+                  <p className="text-xs text-muted-foreground mb-1">Win Rate</p>
+                  <p className={`text-2xl font-bold font-mono ${liveWinRate >= 50 ? 'text-success' : 'text-muted-foreground'}`}>{liveWinRate.toFixed(1)}%</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
+                <CardContent className="pt-6">
+                  <p className="text-xs text-muted-foreground mb-1">Profit Factor</p>
+                  <p className={`text-2xl font-bold font-mono`}>{liveProfitFactor.toFixed(2)}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
+                <CardContent className="pt-6">
+                  <p className="text-xs text-muted-foreground mb-1">Avg Win</p>
+                  <p className="text-2xl font-bold font-mono text-success">${liveAvgWin.toLocaleString(undefined, {maximumFractionDigits: 0})}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
+                <CardContent className="pt-6">
+                  <p className="text-xs text-muted-foreground mb-1">Avg Loss</p>
+                  <p className="text-2xl font-bold font-mono text-destructive">${liveAvgLoss.toLocaleString(undefined, {maximumFractionDigits: 0})}</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle>PnL by Setup</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={setupData} layout="vertical" margin={{ top: 5, right: 30, left: 80, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="hsl(var(--border))" opacity={0.5} />
+                        <XAxis type="number" hide />
+                        <YAxis dataKey="name" type="category" width={75} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} tickLine={false} axisLine={false} />
+                        <Tooltip cursor={{fill: 'hsl(var(--muted)/0.2)'}} />
+                        <Bar dataKey="pnl" name="PNL" radius={[0, 4, 4, 0]}>
+                          {setupData.map((entry: any, index: number) => (
+                            <Cell key={`cell-${index}`} fill={entry.pnl >= 0 ? 'hsl(var(--success))' : 'hsl(var(--destructive))'} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle>Cumulative P&L</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={cumulativeLiveData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.5} />
+                        <XAxis dataKey="date" tick={{fill: 'hsl(var(--muted-foreground))'}} tickLine={false} axisLine={false} />
+                        <YAxis tick={{fill: 'hsl(var(--muted-foreground))'}} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val}`} />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="cumPnl" name="Cumulative P&L" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle>Symbol Performance</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {symbolData.slice(0, 5).map((symbol: any) => (
+                    <div key={symbol.name} className="flex items-center justify-between p-3 bg-muted/20 rounded">
+                      <div className="flex-1">
+                        <p className="font-semibold">{symbol.name}</p>
+                        <p className="text-xs text-muted-foreground">{symbol.count} trades • {symbol.winRate}% win rate</p>
+                      </div>
+                      <p className={`font-mono font-bold ${symbol.pnl >= 0 ? 'text-success' : 'text-destructive'}`}>
+                        {symbol.pnl >= 0 ? '+' : ''}${symbol.pnl.toLocaleString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );

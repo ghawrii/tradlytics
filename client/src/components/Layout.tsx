@@ -18,7 +18,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { name: "Live Accounts", href: "/live-accounts", icon: LayoutDashboard },
     { name: "Journal", href: "/journal", icon: BookOpen },
     { name: "Prop Firms", href: "/prop-firms", icon: Trophy },
-    { name: "Analytics", href: "/analytics", icon: BarChart2 },
   ];
 
   return (

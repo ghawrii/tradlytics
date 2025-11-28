@@ -62,6 +62,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BarChart, Bar, LineChart, Line, Cell, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 // Mock Data for Prop Firms
 const initialAccounts = [
@@ -149,6 +150,43 @@ export default function PropFirms() {
   // Calendar logic for prop firm trades
   const propFirmTrades = mockTrades.filter(t => t.accountType === "PROP_FIRM");
   
+  // Analytics for PROP_FIRM only
+  const propWinTrades = propFirmTrades.filter(t => t.pnl > 0);
+  const propLossTrades = propFirmTrades.filter(t => t.pnl < 0);
+  const propAvgWin = propWinTrades.length > 0 ? propWinTrades.reduce((acc, t) => acc + t.pnl, 0) / propWinTrades.length : 0;
+  const propAvgLoss = propLossTrades.length > 0 ? propLossTrades.reduce((acc, t) => acc + t.pnl, 0) / propLossTrades.length : 0;
+  const propWinRate = propFirmTrades.length > 0 ? (propWinTrades.length / propFirmTrades.length) * 100 : 0;
+  const propProfitFactor = Math.abs(propWinTrades.reduce((acc, t) => acc + t.pnl, 0)) > 0 ? Math.abs(propWinTrades.reduce((acc, t) => acc + t.pnl, 0)) / Math.abs(propLossTrades.reduce((acc, t) => acc + t.pnl, 0) || 1) : 0;
+
+  // Setup stats for prop trades
+  const propSetupStats = propFirmTrades.reduce((acc: any, trade) => {
+    if (!acc[trade.setup]) {
+      acc[trade.setup] = { name: trade.setup, wins: 0, total: 0, pnl: 0 };
+    }
+    acc[trade.setup].total += 1;
+    acc[trade.setup].pnl += trade.pnl;
+    if (trade.pnl > 0) acc[trade.setup].wins += 1;
+    return acc;
+  }, {});
+
+  const propSetupData = Object.values(propSetupStats).map((s: any) => ({
+    ...s,
+    winRate: Math.round((s.wins / s.total) * 100)
+  })).sort((a: any, b: any) => b.pnl - a.pnl);
+
+  // Cumulative PnL for prop trades
+  const cumulativePropData = propFirmTrades
+    .sort((a, b) => new Date(a.entryDate).getTime() - new Date(b.entryDate).getTime())
+    .reduce((acc: any[], trade, index) => {
+      const cumulative = (acc[index - 1]?.cumPnl || 0) + trade.pnl;
+      acc.push({
+        date: format(new Date(trade.entryDate), "MMM dd"),
+        cumPnl: cumulative,
+        tradeNum: index + 1
+      });
+      return acc;
+    }, []);
+
   const daysInMonth = eachDayOfInterval({
     start: startOfMonth(currentMonth),
     end: endOfMonth(currentMonth),
@@ -304,6 +342,14 @@ export default function PropFirms() {
           </Dialog>
         </div>
 
+        <Tabs defaultValue="overview" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-8">
+        
         {/* Stage-Based Goals */}
         <div className="grid gap-4 md:grid-cols-2">
           {/* Funded Accounts Goal */}
@@ -827,6 +873,81 @@ export default function PropFirms() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
+                <CardContent className="pt-6">
+                  <p className="text-xs text-muted-foreground mb-1">Win Rate</p>
+                  <p className={`text-2xl font-bold font-mono ${propWinRate >= 50 ? 'text-success' : 'text-muted-foreground'}`}>{propWinRate.toFixed(1)}%</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
+                <CardContent className="pt-6">
+                  <p className="text-xs text-muted-foreground mb-1">Profit Factor</p>
+                  <p className={`text-2xl font-bold font-mono`}>{propProfitFactor.toFixed(2)}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
+                <CardContent className="pt-6">
+                  <p className="text-xs text-muted-foreground mb-1">Avg Win</p>
+                  <p className="text-2xl font-bold font-mono text-success">${propAvgWin.toLocaleString(undefined, {maximumFractionDigits: 0})}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
+                <CardContent className="pt-6">
+                  <p className="text-xs text-muted-foreground mb-1">Avg Loss</p>
+                  <p className="text-2xl font-bold font-mono text-destructive">${propAvgLoss.toLocaleString(undefined, {maximumFractionDigits: 0})}</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle>PnL by Setup</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={propSetupData} layout="vertical" margin={{ top: 5, right: 30, left: 80, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="hsl(var(--border))" opacity={0.5} />
+                        <XAxis type="number" hide />
+                        <YAxis dataKey="name" type="category" width={75} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} tickLine={false} axisLine={false} />
+                        <Tooltip cursor={{fill: 'hsl(var(--muted)/0.2)'}} />
+                        <Bar dataKey="pnl" name="PNL" radius={[0, 4, 4, 0]}>
+                          {propSetupData.map((entry: any, index: number) => (
+                            <Cell key={`cell-${index}`} fill={entry.pnl >= 0 ? 'hsl(var(--success))' : 'hsl(var(--destructive))'} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle>Cumulative P&L</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={cumulativePropData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.5} />
+                        <XAxis dataKey="date" tick={{fill: 'hsl(var(--muted-foreground))'}} tickLine={false} axisLine={false} />
+                        <YAxis tick={{fill: 'hsl(var(--muted-foreground))'}} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val}`} />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="cumPnl" name="Cumulative P&L" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );
