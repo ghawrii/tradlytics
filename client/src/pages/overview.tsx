@@ -14,12 +14,12 @@ import {
   Pie,
   Legend
 } from "recharts";
-import { DollarSign, Activity, Target, TrendingUp, TrendingDown, Zap, X } from "lucide-react";
+import { DollarSign, Activity, Target, TrendingUp, TrendingDown, Zap, X, Trophy, CheckCircle2, AlertCircle, Percent } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { mockTrades } from "@/lib/mockData";
+import { mockTrades, mockPropFirmAccounts } from "@/lib/mockData";
 import { format, subDays } from "date-fns";
 import Layout from "@/components/Layout";
 
@@ -105,6 +105,45 @@ export default function Overview() {
   const monthlyData = Object.values(monthlyByType);
 
   const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))'];
+
+  // Prop Firm Metrics
+  const propFirmMetrics = useMemo(() => {
+    const totalEvaluations = mockPropFirmAccounts.filter(a => a.stage === "Evaluation").length;
+    const activeEvaluations = mockPropFirmAccounts.filter(a => a.stage === "Evaluation" && a.status === "ACTIVE").length;
+    const activeFunded = mockPropFirmAccounts.filter(a => a.stage === "Funded" && a.status === "ACTIVE").length;
+    const failedChallenges = mockPropFirmAccounts.filter(a => a.status === "FAILED").length;
+    const failedFunded = mockPropFirmAccounts.filter(a => a.stage === "Funded" && a.status === "FAILED").length;
+    const totalPayouts = mockPropFirmAccounts.filter(a => a.payouts > 0).length;
+    const totalPayoutAmount = mockPropFirmAccounts.reduce((acc, a) => acc + a.payouts, 0);
+    
+    const phase1Accounts = mockPropFirmAccounts.filter(a => a.stage === "Phase 1");
+    const phase1PassRate = phase1Accounts.length > 0 
+      ? (phase1Accounts.filter(a => a.status === "PASSED").length / phase1Accounts.length) * 100 
+      : 0;
+    
+    const phase2Accounts = mockPropFirmAccounts.filter(a => a.stage === "Phase 2");
+    const phase2PassRate = phase2Accounts.length > 0 
+      ? (phase2Accounts.filter(a => a.status === "PASSED").length / phase2Accounts.length) * 100 
+      : 0;
+    
+    const reachedFundedPercentage = (mockPropFirmAccounts.filter(a => a.stage === "Funded").length / mockPropFirmAccounts.length) * 100;
+    const passedAccounts = mockPropFirmAccounts.filter(a => a.status === "PASSED").length;
+    const reachedPayoutPercentage = passedAccounts > 0 ? (totalPayouts / passedAccounts) * 100 : 0;
+
+    return {
+      totalEvaluations,
+      activeEvaluations,
+      activeFunded,
+      failedChallenges,
+      failedFunded,
+      totalPayouts,
+      totalPayoutAmount,
+      phase1PassRate,
+      phase2PassRate,
+      reachedFundedPercentage,
+      reachedPayoutPercentage
+    };
+  }, []);
 
   const MetricCard = ({ label, value, icon: Icon, color = "text-primary", subtext }: any) => (
     <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
@@ -361,11 +400,11 @@ export default function Overview() {
             </CardContent>
           </Card>
 
-          {/* Prop Firms Details */}
+          {/* Prop Firms Trading Details */}
           <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                Prop Firms
+                Prop Firms Trading
                 <Badge variant="secondary">Funded</Badge>
               </CardTitle>
             </CardHeader>
@@ -390,6 +429,86 @@ export default function Overview() {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Prop Firm Management Metrics */}
+        <div>
+          <h2 className="text-xl font-bold mb-4 text-foreground">Prop Firm Account Management</h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+            <MetricCard
+              label="Total Evaluations"
+              value={propFirmMetrics.totalEvaluations}
+              icon={Trophy}
+              color="text-primary"
+              subtext="All evaluation stages"
+            />
+            <MetricCard
+              label="Active Evaluations"
+              value={propFirmMetrics.activeEvaluations}
+              icon={Activity}
+              color={propFirmMetrics.activeEvaluations > 0 ? "text-primary" : "text-muted-foreground"}
+              subtext="In progress"
+            />
+            <MetricCard
+              label="Active Funded"
+              value={propFirmMetrics.activeFunded}
+              icon={CheckCircle2}
+              color={propFirmMetrics.activeFunded > 0 ? "text-success" : "text-muted-foreground"}
+              subtext="Trading now"
+            />
+            <MetricCard
+              label="Failed Challenges"
+              value={propFirmMetrics.failedChallenges}
+              icon={AlertCircle}
+              color="text-destructive"
+              subtext="All stages"
+            />
+            <MetricCard
+              label="Total Payouts"
+              value={`$${propFirmMetrics.totalPayoutAmount.toLocaleString()}`}
+              icon={DollarSign}
+              color="text-success"
+              subtext={`${propFirmMetrics.totalPayouts} accounts`}
+            />
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 mt-4">
+            <MetricCard
+              label="Phase 1 Pass Rate"
+              value={`${propFirmMetrics.phase1PassRate.toFixed(1)}%`}
+              icon={Percent}
+              color={propFirmMetrics.phase1PassRate >= 50 ? "text-success" : "text-muted-foreground"}
+              subtext="Phase 1 completions"
+            />
+            <MetricCard
+              label="Phase 2 Pass Rate"
+              value={`${propFirmMetrics.phase2PassRate.toFixed(1)}%`}
+              icon={Percent}
+              color={propFirmMetrics.phase2PassRate >= 50 ? "text-success" : "text-muted-foreground"}
+              subtext="Phase 2 completions"
+            />
+            <MetricCard
+              label="Reached Funded %"
+              value={`${propFirmMetrics.reachedFundedPercentage.toFixed(1)}%`}
+              icon={TrendingUp}
+              color={propFirmMetrics.reachedFundedPercentage >= 50 ? "text-success" : "text-primary"}
+              subtext="Of all accounts"
+            />
+            <MetricCard
+              label="Payout Rate"
+              value={`${propFirmMetrics.reachedPayoutPercentage.toFixed(1)}%`}
+              icon={CheckCircle2}
+              color={propFirmMetrics.reachedPayoutPercentage >= 50 ? "text-success" : "text-primary"}
+              subtext="Of passed accounts"
+            />
+            <MetricCard
+              label="Failed Funded"
+              value={propFirmMetrics.failedFunded}
+              icon={X}
+              color="text-destructive"
+              subtext="Funded & failed"
+            />
+          </div>
         </div>
       </div>
     </Layout>

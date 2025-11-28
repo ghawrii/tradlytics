@@ -84,6 +84,61 @@ function generateMockTrades(count: number): Trade[] {
 
 export const mockTrades = generateMockTrades(100);
 
+export const mockPropFirmAccounts = [
+  { 
+    id: 1, 
+    firm: "FTMO", 
+    type: "2 Step", 
+    size: 100000, 
+    cost: 540, 
+    status: "PASSED", 
+    stage: "Funded",
+    payouts: 12500,
+    startDate: "2024-10-15",
+    accountNumber: "FTMO-882910",
+    equity: 104200
+  },
+  { 
+    id: 2, 
+    firm: "Apex", 
+    type: "1 Step", 
+    size: 50000, 
+    cost: 167, 
+    status: "ACTIVE", 
+    stage: "Evaluation",
+    payouts: 0,
+    startDate: "2025-01-10",
+    accountNumber: "APEX-22910",
+    equity: 51200
+  },
+  { 
+    id: 3, 
+    firm: "TopStep", 
+    type: "2 Step", 
+    size: 150000, 
+    cost: 350, 
+    status: "FAILED", 
+    stage: "Phase 1",
+    payouts: 0,
+    startDate: "2024-11-01",
+    accountNumber: "TS-99281",
+    equity: 142000
+  },
+  { 
+    id: 4, 
+    firm: "MyForexFunds", 
+    type: "Instant", 
+    size: 20000, 
+    cost: 200, 
+    status: "PASSED", 
+    stage: "Funded",
+    payouts: 4200,
+    startDate: "2024-08-20",
+    accountNumber: "MFF-11029",
+    equity: 20800
+  }
+];
+
 export const stats = {
   totalPnl: mockTrades.reduce((acc, t) => acc + t.pnl, 0),
   winRate: (mockTrades.filter(t => t.pnl > 0).length / mockTrades.length) * 100,
