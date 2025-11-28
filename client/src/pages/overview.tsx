@@ -14,11 +14,13 @@ import {
   Pie,
   Legend
 } from "recharts";
-import { DollarSign, Activity, Target, TrendingUp, TrendingDown, Zap } from "lucide-react";
+import { DollarSign, Activity, Target, TrendingUp, TrendingDown, Zap, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { mockTrades } from "@/lib/mockData";
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
 import Layout from "@/components/Layout";
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -38,9 +40,27 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export default function Overview() {
+  const today = new Date();
+  const thirtyDaysAgo = subDays(today, 30);
+  
+  const [startDate, setStartDate] = useState(format(thirtyDaysAgo, "yyyy-MM-dd"));
+  const [endDate, setEndDate] = useState(format(today, "yyyy-MM-dd"));
+
+  // Filter trades by date range
+  const filteredTrades = useMemo(() => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+    
+    return mockTrades.filter(trade => {
+      const tradeDate = new Date(trade.entryDate);
+      return tradeDate >= start && tradeDate <= end;
+    });
+  }, [startDate, endDate]);
+
   // Separate trades by account type
-  const liveTrades = mockTrades.filter(t => t.accountType === "LIVE");
-  const propTrades = mockTrades.filter(t => t.accountType === "PROP_FIRM");
+  const liveTrades = filteredTrades.filter(t => t.accountType === "LIVE");
+  const propTrades = filteredTrades.filter(t => t.accountType === "PROP_FIRM");
   
   // Calculate metrics for each account type
   const calculateMetrics = (trades: typeof mockTrades) => {
@@ -57,7 +77,7 @@ export default function Overview() {
 
   const liveMetrics = calculateMetrics(liveTrades);
   const propMetrics = calculateMetrics(propTrades);
-  const combinedMetrics = calculateMetrics(mockTrades);
+  const combinedMetrics = calculateMetrics(filteredTrades);
 
   // Comparison data
   const comparisonData = [
@@ -72,7 +92,7 @@ export default function Overview() {
   ];
 
   // Monthly comparison
-  const monthlyByType = mockTrades.reduce((acc, trade) => {
+  const monthlyByType = filteredTrades.reduce((acc, trade) => {
     const month = format(new Date(trade.entryDate), "MMM");
     if (!acc[month]) acc[month] = { name: month, live: 0, prop: 0 };
     if (trade.accountType === "LIVE") {
@@ -105,9 +125,91 @@ export default function Overview() {
   return (
     <Layout>
       <div className="p-8 space-y-8 max-w-7xl mx-auto">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Trading Dashboard</h1>
-          <p className="text-muted-foreground">Combined performance overview of Live Accounts and Prop Firms.</p>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Trading Dashboard</h1>
+            <p className="text-muted-foreground">Combined performance overview of Live Accounts and Prop Firms.</p>
+          </div>
+
+          {/* Date Range Filter */}
+          <div className="bg-card/50 border border-border/50 rounded-lg p-4 backdrop-blur-sm">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-muted-foreground">Date Range:</span>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 items-center flex-1">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-muted-foreground">From</label>
+                  <Input 
+                    type="date" 
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-40 bg-background border-border"
+                  />
+                </div>
+                <div className="text-muted-foreground">to</div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-muted-foreground">To</label>
+                  <Input 
+                    type="date" 
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-40 bg-background border-border"
+                  />
+                </div>
+                <div className="flex gap-2 ml-auto">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setStartDate(format(subDays(today, 7), "yyyy-MM-dd"));
+                      setEndDate(format(today, "yyyy-MM-dd"));
+                    }}
+                    className="text-xs"
+                  >
+                    Last 7D
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setStartDate(format(subDays(today, 30), "yyyy-MM-dd"));
+                      setEndDate(format(today, "yyyy-MM-dd"));
+                    }}
+                    className="text-xs"
+                  >
+                    Last 30D
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setStartDate(format(subDays(today, 90), "yyyy-MM-dd"));
+                      setEndDate(format(today, "yyyy-MM-dd"));
+                    }}
+                    className="text-xs"
+                  >
+                    Last 90D
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setStartDate("");
+                      setEndDate(format(today, "yyyy-MM-dd"));
+                    }}
+                    className="text-xs gap-1"
+                  >
+                    <X className="h-3 w-3" />
+                    Reset
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <div className="text-xs text-muted-foreground mt-2">
+              Showing {filteredTrades.length} trades from {format(new Date(startDate), "MMM dd, yyyy")} to {format(new Date(endDate), "MMM dd, yyyy")}
+            </div>
+          </div>
         </div>
 
         {/* Overall Performance Cards */}
