@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, getDay, addMonths, subMonths, format } from "date-fns";
 import Layout from "@/components/Layout";
 import { 
   Card, 
@@ -29,6 +30,7 @@ import {
   Wallet,
   CreditCard,
   ChevronRight,
+  ChevronLeft,
   History,
   X
 } from "lucide-react";
@@ -123,6 +125,7 @@ export default function PropFirms() {
   const [payoutAccount, setPayoutAccount] = useState(null);
   const [payoutAmount, setPayoutAmount] = useState("");
   const [payoutBank, setPayoutBank] = useState("");
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   // Stats Calculation
   const totalSpent = accounts.reduce((acc, curr) => acc + curr.cost, 0);
@@ -135,6 +138,37 @@ export default function PropFirms() {
   const passedCount = accounts.filter(a => a.status === "PASSED").length;
   const failedCount = accounts.filter(a => a.status === "FAILED").length;
   const activeCount = accounts.filter(a => a.status === "ACTIVE").length;
+
+  // Calendar logic for prop firm trades
+  const { mockTrades } = require("@/lib/mockData");
+  const propFirmTrades = mockTrades.filter(t => t.accountType === "PROP_FIRM");
+  
+  const daysInMonth = eachDayOfInterval({
+    start: startOfMonth(currentMonth),
+    end: endOfMonth(currentMonth),
+  });
+
+  const startDay = getDay(startOfMonth(currentMonth));
+  const emptyDays = Array(startDay).fill(null);
+
+  const getDayPropStats = (date) => {
+    const dayTrades = propFirmTrades.filter(t => isSameDay(new Date(t.entryDate), date));
+    const dayPnl = dayTrades.reduce((acc, t) => acc + t.pnl, 0);
+    
+    return { dayPnl, tradeCount: dayTrades.length };
+  };
+
+  const monthlyPropPnl = useMemo(() => {
+     const start = startOfMonth(currentMonth);
+     const end = endOfMonth(currentMonth);
+     
+     return propFirmTrades
+       .filter(t => {
+          const tradeDate = new Date(t.entryDate);
+          return tradeDate >= start && tradeDate <= end;
+       })
+       .reduce((acc, t) => acc + t.pnl, 0);
+  }, [currentMonth, propFirmTrades]);
 
   const openDetails = (account) => {
     setSelectedAccount(account);
@@ -435,6 +469,81 @@ export default function PropFirms() {
                </div>
            </TabsContent>
         </Tabs>
+
+        {/* Prop Firm Performance Calendar */}
+        <div className="space-y-6 mt-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold tracking-tight text-foreground">Prop Firm Trading Calendar</h2>
+              <p className="text-sm text-muted-foreground mt-1">Daily P&L performance across all prop firm accounts</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col items-end">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Monthly P&L</span>
+                <span className={`text-xl font-mono font-bold ${monthlyPropPnl >= 0 ? 'text-success' : 'text-destructive'}`}>
+                  {monthlyPropPnl >= 0 ? '+' : ''}${monthlyPropPnl.toLocaleString()}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="h-8 w-8">
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <div className="font-semibold min-w-[120px] text-center text-sm">
+                  {format(currentMonth, "MMM yyyy")}
+                </div>
+                <Button variant="outline" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="h-8 w-8">
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-7 gap-2 text-center">
+            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => (
+              <div key={day} className="text-xs font-medium text-muted-foreground uppercase">
+                {day}
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-7 gap-2">
+            {emptyDays.map((_, i) => (
+              <div key={`empty-${i}`} className="bg-transparent" />
+            ))}
+            
+            {daysInMonth.map(date => {
+              const { dayPnl, tradeCount } = getDayPropStats(date);
+              const hasTrades = tradeCount > 0;
+              
+              return (
+                <Card key={date.toISOString()} className={`min-h-[100px] flex flex-col overflow-hidden transition-all hover:ring-1 hover:ring-primary ${hasTrades ? (dayPnl >= 0 ? 'bg-success/8 border-success/20' : 'bg-destructive/8 border-destructive/20') : 'bg-card/30 border-border/50'}`}>
+                  <CardHeader className="p-2 pb-0 flex flex-row justify-between items-start">
+                    <span className={`text-xs font-medium ${!isSameMonth(date, currentMonth) ? 'text-muted-foreground/30' : 'text-muted-foreground'}`}>
+                      {format(date, "d")}
+                    </span>
+                    {hasTrades && (
+                      <span className="text-[9px] font-mono text-muted-foreground">
+                        {tradeCount}T
+                      </span>
+                    )}
+                  </CardHeader>
+                  <CardContent className="p-2 flex-1 flex flex-col justify-center items-center">
+                    {hasTrades ? (
+                      <div className="w-full text-center">
+                        <div className={`text-sm font-bold font-mono ${dayPnl >= 0 ? 'text-success' : 'text-destructive'}`}>
+                          {dayPnl >= 0 ? '+' : ''}${dayPnl}
+                        </div>
+                        <Badge variant="secondary" className="mt-1 text-[8px] px-1 py-0 h-4">PROP</Badge>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground/20 text-xs">-</span>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Account Details Sheet */}
         <Sheet open={!!selectedAccount} onOpenChange={(open) => !open && setSelectedAccount(null)}>
