@@ -24,11 +24,14 @@ import { TrendingUp, TrendingDown, Target, BarChart3, Zap } from "lucide-react";
 
 export default function Analytics() {
   
+  // Filter for LIVE accounts only
+  const liveTrades = mockTrades.filter(t => t.accountType === "LIVE");
+  
   // ============ CORE METRICS ============
-  const totalTrades = mockTrades.length;
-  const winTrades = mockTrades.filter(t => t.pnl > 0);
-  const lossTrades = mockTrades.filter(t => t.pnl < 0);
-  const breakEvenTrades = mockTrades.filter(t => t.pnl === 0);
+  const totalTrades = liveTrades.length;
+  const winTrades = liveTrades.filter(t => t.pnl > 0);
+  const lossTrades = liveTrades.filter(t => t.pnl < 0);
+  const breakEvenTrades = liveTrades.filter(t => t.pnl === 0);
   
   const winRate = (winTrades.length / totalTrades) * 100;
   const totalGrossProfit = winTrades.reduce((acc, t) => acc + t.pnl, 0);
@@ -46,7 +49,7 @@ export default function Analytics() {
   const riskRewardRatio = avgLoss !== 0 ? Math.abs(avgWin / avgLoss) : avgWin > 0 ? Infinity : 0;
 
   // ============ SETUP STATISTICS ============
-  const setupStats = mockTrades.reduce((acc, trade) => {
+  const setupStats = liveTrades.reduce((acc, trade) => {
     if (!acc[trade.setup]) {
       acc[trade.setup] = { name: trade.setup, wins: 0, total: 0, pnl: 0, trades: [] };
     }
@@ -64,7 +67,7 @@ export default function Analytics() {
   })).sort((a, b) => b.pnl - a.pnl);
 
   // ============ TIME-BASED STATISTICS ============
-  const dayStats = mockTrades.reduce((acc, trade) => {
+  const dayStats = liveTrades.reduce((acc, trade) => {
     const day = format(new Date(trade.entryDate), "EEEE");
     if (!acc[day]) {
       acc[day] = { name: day, pnl: 0, count: 0, wins: 0 };
@@ -79,7 +82,7 @@ export default function Analytics() {
   const dayData = dayOrder.map(day => dayStats[day] || { name: day, pnl: 0, count: 0, wins: 0 });
 
   // ============ MONTHLY PERFORMANCE ============
-  const monthlyStats = mockTrades.reduce((acc, trade) => {
+  const monthlyStats = liveTrades.reduce((acc, trade) => {
     const month = format(new Date(trade.entryDate), "MMM yyyy");
     if (!acc[month]) {
       acc[month] = { name: month, pnl: 0, count: 0, wins: 0 };
@@ -95,7 +98,7 @@ export default function Analytics() {
   );
 
   // ============ CUMULATIVE P&L ============
-  const cumulativePnlData = mockTrades
+  const cumulativePnlData = liveTrades
     .sort((a, b) => new Date(a.entryDate).getTime() - new Date(b.entryDate).getTime())
     .reduce((acc: any[], trade, index) => {
       const cumulative = (acc[index - 1]?.cumPnl || 0) + trade.pnl;
@@ -107,27 +110,9 @@ export default function Analytics() {
       return acc;
     }, []);
 
-  // ============ ACCOUNT TYPE COMPARISON ============
-  const accountTypeStats = mockTrades.reduce((acc, trade) => {
-    const type = trade.accountType;
-    if (!acc[type]) {
-      acc[type] = { name: type === "LIVE" ? "Live Accounts" : "Prop Firms", pnl: 0, count: 0, wins: 0, trades: [] };
-    }
-    acc[type].pnl += trade.pnl;
-    acc[type].count += 1;
-    acc[type].trades.push(trade);
-    if (trade.pnl > 0) acc[type].wins += 1;
-    return acc;
-  }, {} as Record<string, any>);
-
-  const accountTypeData = Object.values(accountTypeStats).map((acc: any) => ({
-    ...acc,
-    winRate: Math.round((acc.wins / acc.count) * 100),
-    avgPnl: (acc.pnl / acc.count).toFixed(0)
-  }));
 
   // ============ SYMBOL PERFORMANCE ============
-  const symbolStats = mockTrades.reduce((acc, trade) => {
+  const symbolStats = liveTrades.reduce((acc, trade) => {
     if (!acc[trade.symbol]) {
       acc[trade.symbol] = { name: trade.symbol, pnl: 0, count: 0, wins: 0 };
     }
@@ -147,7 +132,7 @@ export default function Analytics() {
   let currentWinStreak = 0;
   let currentLossStreak = 0;
 
-  for (const trade of mockTrades) {
+  for (const trade of liveTrades) {
     if (trade.pnl > 0) {
       currentWinStreak++;
       maxConsecutiveWins = Math.max(maxConsecutiveWins, currentWinStreak);
@@ -161,8 +146,8 @@ export default function Analytics() {
 
   // ============ TYPE DISTRIBUTION ============
   const typeStats = [
-    { name: 'Long', value: mockTrades.filter(t => t.type === 'LONG').length, pnl: mockTrades.filter(t => t.type === 'LONG').reduce((acc, t) => acc + t.pnl, 0) },
-    { name: 'Short', value: mockTrades.filter(t => t.type === 'SHORT').length, pnl: mockTrades.filter(t => t.type === 'SHORT').reduce((acc, t) => acc + t.pnl, 0) },
+    { name: 'Long', value: liveTrades.filter(t => t.type === 'LONG').length, pnl: liveTrades.filter(t => t.type === 'LONG').reduce((acc, t) => acc + t.pnl, 0) },
+    { name: 'Short', value: liveTrades.filter(t => t.type === 'SHORT').length, pnl: liveTrades.filter(t => t.type === 'SHORT').reduce((acc, t) => acc + t.pnl, 0) },
   ];
 
   const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
@@ -205,16 +190,15 @@ export default function Analytics() {
     <Layout>
       <div className="p-8 space-y-8 max-w-7xl mx-auto">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Trading Analytics</h1>
-          <p className="text-muted-foreground">Deep dive into your trading performance metrics inspired by Tradezella.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Live Accounts Analytics</h1>
+          <p className="text-muted-foreground">Deep dive into your Live trading performance metrics. <span className="text-success font-semibold">{liveTrades.length} trades</span></p>
         </div>
 
         <Tabs defaultValue="metrics" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="metrics">Key Metrics</TabsTrigger>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="performance">Performance</TabsTrigger>
-            <TabsTrigger value="accounts">Accounts</TabsTrigger>
             <TabsTrigger value="symbols">Symbols</TabsTrigger>
           </TabsList>
 
@@ -319,8 +303,8 @@ export default function Analytics() {
 
           {/* ============ OVERVIEW TAB ============ */}
           <TabsContent value="overview" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-              <Card className="col-span-4 bg-card/50 border-border/50 backdrop-blur-sm">
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle>PnL Distribution by Setup</CardTitle>
                 </CardHeader>
@@ -343,9 +327,9 @@ export default function Analytics() {
                 </CardContent>
               </Card>
 
-              <Card className="col-span-3 bg-card/50 border-border/50 backdrop-blur-sm">
+              <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
                 <CardHeader>
-                  <CardTitle>Trade Distribution</CardTitle>
+                  <CardTitle>Trade Distribution (Long vs Short)</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="h-[350px] w-full">
