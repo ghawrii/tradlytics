@@ -129,6 +129,14 @@ export default function Overview() {
     const reachedFundedPercentage = (mockPropFirmAccounts.filter(a => a.stage === "Funded").length / mockPropFirmAccounts.length) * 100;
     const passedAccounts = mockPropFirmAccounts.filter(a => a.status === "PASSED").length;
     const reachedPayoutPercentage = passedAccounts > 0 ? (totalPayouts / passedAccounts) * 100 : 0;
+    
+    // New metrics
+    const currentFundedAmount = mockPropFirmAccounts
+      .filter(a => a.stage === "Funded")
+      .reduce((acc, a) => acc + a.size, 0);
+    
+    const totalAmountSpent = mockPropFirmAccounts.reduce((acc, a) => acc + a.cost, 0);
+    const netPnL = totalPayoutAmount - totalAmountSpent;
 
     return {
       totalEvaluations,
@@ -141,7 +149,10 @@ export default function Overview() {
       phase1PassRate,
       phase2PassRate,
       reachedFundedPercentage,
-      reachedPayoutPercentage
+      reachedPayoutPercentage,
+      currentFundedAmount,
+      totalAmountSpent,
+      netPnL
     };
   }, []);
 
@@ -434,6 +445,39 @@ export default function Overview() {
         {/* Prop Firm Management Metrics */}
         <div>
           <h2 className="text-xl font-bold mb-4 text-foreground">Prop Firm Account Management</h2>
+          
+          {/* Key Financial Metrics */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+            <MetricCard
+              label="Current Funded Amount"
+              value={`$${propFirmMetrics.currentFundedAmount.toLocaleString()}`}
+              icon={DollarSign}
+              color="text-primary"
+              subtext="Active capital available"
+            />
+            <MetricCard
+              label="Alltime Total Payouts"
+              value={`$${propFirmMetrics.totalPayoutAmount.toLocaleString()}`}
+              icon={DollarSign}
+              color="text-success"
+              subtext="Earnings received"
+            />
+            <MetricCard
+              label="Total Amount Spent"
+              value={`$${propFirmMetrics.totalAmountSpent.toLocaleString()}`}
+              icon={DollarSign}
+              color="text-muted-foreground"
+              subtext="Evaluation costs"
+            />
+            <MetricCard
+              label="Net PnL"
+              value={`${propFirmMetrics.netPnL >= 0 ? '+' : ''}$${propFirmMetrics.netPnL.toLocaleString()}`}
+              icon={TrendingUp}
+              color={propFirmMetrics.netPnL >= 0 ? "text-success" : "text-destructive"}
+              subtext="Payouts - Costs"
+            />
+          </div>
+
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             <MetricCard
               label="Total Evaluations"
