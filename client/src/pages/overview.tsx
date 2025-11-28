@@ -595,7 +595,7 @@ export default function Overview() {
           </div>
 
           {/* Payout by Prop Firms */}
-          <div className="grid gap-4 md:grid-cols-2 mt-6">
+          <div className="grid gap-4 mt-6">
             <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle>Payout by Prop Firms</CardTitle>
@@ -615,27 +615,47 @@ export default function Overview() {
               </CardContent>
             </Card>
 
-            {/* Growth: Payouts & Funded Amount */}
-            <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle>Growth: Payouts & Funded Amount</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={growthData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.5} />
-                      <XAxis dataKey="date" tick={{fill: 'hsl(var(--muted-foreground))'}} tickLine={false} axisLine={false} />
-                      <YAxis tick={{fill: 'hsl(var(--muted-foreground))'}} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val / 1000}k`} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend />
-                      <Line type="monotone" dataKey="payouts" name="Cumulative Payouts" stroke="hsl(var(--success))" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey="funded" name="Funded Amount" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
+            {/* All Time Payouts Growth */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle>All Time Payouts Growth</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={growthData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.5} />
+                        <XAxis dataKey="date" tick={{fill: 'hsl(var(--muted-foreground))'}} tickLine={false} axisLine={false} />
+                        <YAxis tick={{fill: 'hsl(var(--muted-foreground))'}} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val / 1000}k`} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Line type="monotone" dataKey="payouts" name="Cumulative Payouts" stroke="hsl(var(--success))" strokeWidth={2} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Current Funded Amount Growth */}
+              <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle>Current Funded Amount Growth</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={growthData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.5} />
+                        <XAxis dataKey="date" tick={{fill: 'hsl(var(--muted-foreground))'}} tickLine={false} axisLine={false} />
+                        <YAxis tick={{fill: 'hsl(var(--muted-foreground))'}} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val / 1000}k`} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Line type="monotone" dataKey="funded" name="Funded Amount" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>
