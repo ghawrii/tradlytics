@@ -8,10 +8,14 @@ import {
   Tooltip, 
   ResponsiveContainer 
 } from "recharts";
-import { ArrowUpRight, ArrowDownRight, DollarSign, Activity, Target, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, DollarSign, Activity, Target, TrendingUp, ChevronLeft, ChevronRight, Plus, Flag } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { mockTrades } from "@/lib/mockData";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, getDay, addMonths, subMonths } from "date-fns";
 import Layout from "@/components/Layout";
@@ -32,6 +36,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export default function Dashboard() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [liveGoal, setLiveGoal] = useState<number | null>(2500);
+  const [goalInput, setGoalInput] = useState("");
 
   // Filter to LIVE trades only
   const liveTrades = mockTrades.filter(t => t.accountType === "LIVE");
@@ -82,6 +88,9 @@ export default function Dashboard() {
        .reduce((acc, t) => acc + t.pnl, 0);
   }, [currentMonth, liveTrades]);
 
+  const goalProgress = liveGoal ? Math.min((monthlyPnl / liveGoal) * 100, 100) : 0;
+  const goalAchieved = liveGoal && monthlyPnl >= liveGoal;
+
   return (
     <Layout>
       <div className="p-8 space-y-8 max-w-7xl mx-auto">
@@ -89,6 +98,57 @@ export default function Dashboard() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
           <p className="text-muted-foreground">Overview of your trading performance.</p>
         </div>
+
+        {/* Monthly Goal Section */}
+        {liveGoal && (
+          <Card className="border-border/50 bg-gradient-to-br from-primary/10 to-card/50 backdrop-blur-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div className="flex items-center gap-2">
+                <Flag className="h-5 w-5 text-primary" />
+                <CardTitle>Monthly Goal Progress</CardTitle>
+              </div>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm">Edit</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Set Monthly P&L Goal</DialogTitle>
+                    <DialogDescription>Update your monthly profit target for live accounts</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label>Monthly P&L Target ($)</Label>
+                      <Input type="number" placeholder="2500" value={goalInput || liveGoal} onChange={(e) => setGoalInput(e.target.value)} />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setGoalInput("")}>Cancel</Button>
+                    <Button onClick={() => {
+                      if (goalInput) setLiveGoal(Number(goalInput));
+                      setGoalInput("");
+                    }}>Save Goal</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Progress</p>
+                  <p className="text-2xl font-bold font-mono">${monthlyPnl.toLocaleString()} / ${liveGoal.toLocaleString()}</p>
+                </div>
+                <div className="text-right">
+                  <p className={`text-2xl font-bold ${goalAchieved ? 'text-success' : 'text-foreground'}`}>
+                    {goalProgress.toFixed(0)}%
+                  </p>
+                  {goalAchieved && <p className="text-xs text-success font-medium">Goal Achieved! 🎯</p>}
+                </div>
+              </div>
+              <Progress value={goalProgress} className="h-2" />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats Grid - LIVE ACCOUNT ONLY */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

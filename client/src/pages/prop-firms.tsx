@@ -33,7 +33,8 @@ import {
   ChevronRight,
   ChevronLeft,
   History,
-  X
+  X,
+  Flag
 } from "lucide-react";
 import {
   Dialog,
@@ -53,6 +54,16 @@ import {
 } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -127,6 +138,8 @@ export default function PropFirms() {
   const [payoutAmount, setPayoutAmount] = useState("");
   const [payoutBank, setPayoutBank] = useState("");
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [propGoal, setPropGoal] = useState<number | null>(5000);
+  const [goalInput, setGoalInput] = useState("");
 
   // Stats Calculation
   const totalSpent = accounts.reduce((acc, curr) => acc + curr.cost, 0);
@@ -169,6 +182,9 @@ export default function PropFirms() {
        })
        .reduce((acc, t) => acc + t.pnl, 0);
   }, [currentMonth, propFirmTrades]);
+
+  const propGoalProgress = propGoal ? Math.min((monthlyPropPnl / propGoal) * 100, 100) : 0;
+  const propGoalAchieved = propGoal && monthlyPropPnl >= propGoal;
 
   const openDetails = (account) => {
     setSelectedAccount(account);
@@ -267,6 +283,57 @@ export default function PropFirms() {
             </DialogContent>
           </Dialog>
         </div>
+
+        {/* Monthly Goal Section - Prop Firms */}
+        {propGoal && (
+          <Card className="border-border/50 bg-gradient-to-br from-primary/10 to-card/50 backdrop-blur-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div className="flex items-center gap-2">
+                <Flag className="h-5 w-5 text-primary" />
+                <CardTitle>Monthly Goal Progress</CardTitle>
+              </div>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm">Edit</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Set Monthly P&L Goal</DialogTitle>
+                    <DialogDescription>Update your monthly profit target for prop firm accounts</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label>Monthly P&L Target ($)</Label>
+                      <Input type="number" placeholder="5000" value={goalInput || propGoal} onChange={(e) => setGoalInput(e.target.value)} />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setGoalInput("")}>Cancel</Button>
+                    <Button onClick={() => {
+                      if (goalInput) setPropGoal(Number(goalInput));
+                      setGoalInput("");
+                    }}>Save Goal</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Progress</p>
+                  <p className="text-2xl font-bold font-mono">${monthlyPropPnl.toLocaleString()} / ${propGoal.toLocaleString()}</p>
+                </div>
+                <div className="text-right">
+                  <p className={`text-2xl font-bold ${propGoalAchieved ? 'text-success' : 'text-foreground'}`}>
+                    {propGoalProgress.toFixed(0)}%
+                  </p>
+                  {propGoalAchieved && <p className="text-xs text-success font-medium">Goal Achieved! 🎯</p>}
+                </div>
+              </div>
+              <Progress value={propGoalProgress} className="h-2" />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Performance Overview Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
