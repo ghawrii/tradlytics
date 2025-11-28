@@ -9,7 +9,7 @@ import Overview from "@/pages/overview";
 import Dashboard from "@/pages/dashboard";
 import Journal from "@/pages/journal";
 import Settings from "@/pages/settings";
-import PropFirms from "@/pages/prop-farms";
+import PropFirms from "@/pages/prop-firms";
 
 function Router() {
   return (
