@@ -129,7 +129,10 @@ export default function PropFirms() {
   const [payoutBank, setPayoutBank] = useState("");
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [propGoal, setPropGoal] = useState<number | null>(5000);
+  const [fundedGoal, setFundedGoal] = useState<number | null>(3000);
+  const [evaluationGoal, setEvaluationGoal] = useState<number | null>(2000);
   const [goalInput, setGoalInput] = useState("");
+  const [stageGoalType, setStageGoalType] = useState<"funded" | "evaluation" | null>(null);
 
   // Stats Calculation
   const totalSpent = accounts.reduce((acc, curr) => acc + curr.cost, 0);
@@ -175,6 +178,33 @@ export default function PropFirms() {
 
   const propGoalProgress = propGoal ? Math.min((monthlyPropPnl / propGoal) * 100, 100) : 0;
   const propGoalAchieved = propGoal && monthlyPropPnl >= propGoal;
+
+  // Calculate P&L by stage
+  const fundedAccounts = accounts.filter(a => a.stage === "Funded");
+  const evaluationAccounts = accounts.filter(a => a.stage === "Evaluation");
+  const fundedFirms = fundedAccounts.map(a => a.firm);
+  const evaluationFirms = evaluationAccounts.map(a => a.firm);
+
+  const monthlyFundedPnl = useMemo(() => {
+    const start = startOfMonth(currentMonth);
+    const end = endOfMonth(currentMonth);
+    return propFirmTrades
+      .filter(t => fundedFirms.includes(t.accountFirm) && new Date(t.entryDate) >= start && new Date(t.entryDate) <= end)
+      .reduce((acc, t) => acc + t.pnl, 0);
+  }, [currentMonth, propFirmTrades, fundedFirms]);
+
+  const monthlyEvaluationPnl = useMemo(() => {
+    const start = startOfMonth(currentMonth);
+    const end = endOfMonth(currentMonth);
+    return propFirmTrades
+      .filter(t => evaluationFirms.includes(t.accountFirm) && new Date(t.entryDate) >= start && new Date(t.entryDate) <= end)
+      .reduce((acc, t) => acc + t.pnl, 0);
+  }, [currentMonth, propFirmTrades, evaluationFirms]);
+
+  const fundedGoalProgress = fundedGoal ? Math.min((monthlyFundedPnl / fundedGoal) * 100, 100) : 0;
+  const fundedGoalAchieved = fundedGoal && monthlyFundedPnl >= fundedGoal;
+  const evaluationGoalProgress = evaluationGoal ? Math.min((monthlyEvaluationPnl / evaluationGoal) * 100, 100) : 0;
+  const evaluationGoalAchieved = evaluationGoal && monthlyEvaluationPnl >= evaluationGoal;
 
   const openDetails = (account) => {
     setSelectedAccount(account);
@@ -274,56 +304,112 @@ export default function PropFirms() {
           </Dialog>
         </div>
 
-        {/* Monthly Goal Section - Prop Firms */}
-        {propGoal && (
-          <Card className="border-border/50 bg-gradient-to-br from-primary/10 to-card/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
-              <div className="flex items-center gap-2">
-                <Flag className="h-5 w-5 text-primary" />
-                <CardTitle>Monthly Goal Progress</CardTitle>
-              </div>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="sm">Edit</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Set Monthly P&L Goal</DialogTitle>
-                    <DialogDescription>Update your monthly profit target for prop firm accounts</DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label>Monthly P&L Target ($)</Label>
-                      <Input type="number" placeholder="5000" value={goalInput || propGoal} onChange={(e) => setGoalInput(e.target.value)} />
+        {/* Stage-Based Goals */}
+        <div className="grid gap-4 md:grid-cols-2">
+          {/* Funded Accounts Goal */}
+          {fundedGoal && (
+            <Card className="border-border/50 bg-gradient-to-br from-primary/10 to-card/50 backdrop-blur-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                <div className="flex items-center gap-2">
+                  <Flag className="h-5 w-5 text-primary" />
+                  <CardTitle>Funded Accounts Goal</CardTitle>
+                </div>
+                <Dialog open={stageGoalType === "funded"} onOpenChange={(open) => setStageGoalType(open ? "funded" : null)}>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="sm">Edit</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Set Funded Accounts Goal</DialogTitle>
+                      <DialogDescription>Update your monthly profit target for funded stage accounts</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label>Monthly P&L Target ($)</Label>
+                        <Input type="number" placeholder="3000" value={goalInput || fundedGoal} onChange={(e) => setGoalInput(e.target.value)} />
+                      </div>
                     </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => { setGoalInput(""); setStageGoalType(null); }}>Cancel</Button>
+                      <Button onClick={() => {
+                        if (goalInput) setFundedGoal(Number(goalInput));
+                        setGoalInput("");
+                        setStageGoalType(null);
+                      }}>Save Goal</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Progress</p>
+                    <p className="text-2xl font-bold font-mono">${monthlyFundedPnl.toLocaleString()} / ${fundedGoal.toLocaleString()}</p>
                   </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setGoalInput("")}>Cancel</Button>
-                    <Button onClick={() => {
-                      if (goalInput) setPropGoal(Number(goalInput));
-                      setGoalInput("");
-                    }}>Save Goal</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Progress</p>
-                  <p className="text-2xl font-bold font-mono">${monthlyPropPnl.toLocaleString()} / ${propGoal.toLocaleString()}</p>
+                  <div className="text-right">
+                    <p className={`text-2xl font-bold ${fundedGoalAchieved ? 'text-success' : 'text-foreground'}`}>
+                      {fundedGoalProgress.toFixed(0)}%
+                    </p>
+                    {fundedGoalAchieved && <p className="text-xs text-success font-medium">Goal Achieved! 🎯</p>}
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className={`text-2xl font-bold ${propGoalAchieved ? 'text-success' : 'text-foreground'}`}>
-                    {propGoalProgress.toFixed(0)}%
-                  </p>
-                  {propGoalAchieved && <p className="text-xs text-success font-medium">Goal Achieved! 🎯</p>}
+                <Progress value={fundedGoalProgress} className="h-2" />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Evaluation Accounts Goal */}
+          {evaluationGoal && (
+            <Card className="border-border/50 bg-gradient-to-br from-primary/10 to-card/50 backdrop-blur-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                <div className="flex items-center gap-2">
+                  <Flag className="h-5 w-5 text-primary" />
+                  <CardTitle>Evaluation Accounts Goal</CardTitle>
                 </div>
-              </div>
-              <Progress value={propGoalProgress} className="h-2" />
-            </CardContent>
-          </Card>
-        )}
+                <Dialog open={stageGoalType === "evaluation"} onOpenChange={(open) => setStageGoalType(open ? "evaluation" : null)}>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="sm">Edit</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Set Evaluation Accounts Goal</DialogTitle>
+                      <DialogDescription>Update your monthly profit target for evaluation stage accounts</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label>Monthly P&L Target ($)</Label>
+                        <Input type="number" placeholder="2000" value={goalInput || evaluationGoal} onChange={(e) => setGoalInput(e.target.value)} />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => { setGoalInput(""); setStageGoalType(null); }}>Cancel</Button>
+                      <Button onClick={() => {
+                        if (goalInput) setEvaluationGoal(Number(goalInput));
+                        setGoalInput("");
+                        setStageGoalType(null);
+                      }}>Save Goal</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Progress</p>
+                    <p className="text-2xl font-bold font-mono">${monthlyEvaluationPnl.toLocaleString()} / ${evaluationGoal.toLocaleString()}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-2xl font-bold ${evaluationGoalAchieved ? 'text-success' : 'text-foreground'}`}>
+                      {evaluationGoalProgress.toFixed(0)}%
+                    </p>
+                    {evaluationGoalAchieved && <p className="text-xs text-success font-medium">Goal Achieved! 🎯</p>}
+                  </div>
+                </div>
+                <Progress value={evaluationGoalProgress} className="h-2" />
+              </CardContent>
+            </Card>
+          )}
+        </div>
 
         {/* Performance Overview Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
