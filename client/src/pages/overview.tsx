@@ -12,7 +12,9 @@ import {
   Cell,
   PieChart,
   Pie,
-  Legend
+  Legend,
+  LineChart,
+  Line
 } from "recharts";
 import { DollarSign, Activity, Target, TrendingUp, TrendingDown, Zap, X, Trophy, CheckCircle2, AlertCircle, Percent } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { mockTrades, mockPropFirmAccounts } from "@/lib/mockData";
-import { format, subDays } from "date-fns";
+import { format, subDays, parseISO } from "date-fns";
 import Layout from "@/components/Layout";
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -105,6 +107,44 @@ export default function Overview() {
   const monthlyData = Object.values(monthlyByType);
 
   const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))'];
+
+  // Payout by Prop Firms
+  const payoutByFirm = useMemo(() => {
+    const firmPayouts: Record<string, number> = {};
+    mockPropFirmAccounts.forEach(account => {
+      if (!firmPayouts[account.firm]) firmPayouts[account.firm] = 0;
+      firmPayouts[account.firm] += account.payouts;
+    });
+    return Object.entries(firmPayouts).map(([firm, payouts]) => ({
+      name: firm,
+      payouts,
+    })).sort((a, b) => b.payouts - a.payouts);
+  }, []);
+
+  // Growth data over time (by account startDate)
+  const growthData = useMemo(() => {
+    const sorted = [...mockPropFirmAccounts].sort((a, b) => 
+      new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+    );
+    
+    const growth = [];
+    let cumulativeFunded = 0;
+    let cumulativePayouts = 0;
+
+    sorted.forEach((account, idx) => {
+      if (account.stage === "Funded") cumulativeFunded += account.size;
+      cumulativePayouts += account.payouts;
+      
+      growth.push({
+        date: format(parseISO(account.startDate), "MMM dd"),
+        funded: cumulativeFunded,
+        payouts: cumulativePayouts,
+        timestamp: new Date(account.startDate).getTime()
+      });
+    });
+
+    return growth;
+  }, []);
 
   // Prop Firm Metrics
   const propFirmMetrics = useMemo(() => {
@@ -552,6 +592,50 @@ export default function Overview() {
               color="text-destructive"
               subtext="Funded & failed"
             />
+          </div>
+
+          {/* Payout by Prop Firms */}
+          <div className="grid gap-4 md:grid-cols-2 mt-6">
+            <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle>Payout by Prop Firms</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={payoutByFirm} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.5} />
+                      <XAxis dataKey="name" tick={{fill: 'hsl(var(--muted-foreground))'}} tickLine={false} axisLine={false} />
+                      <YAxis tick={{fill: 'hsl(var(--muted-foreground))'}} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val}`} />
+                      <Tooltip content={<CustomTooltip />} cursor={{fill: 'hsl(var(--muted)/0.2)'}} />
+                      <Bar dataKey="payouts" name="Payouts" radius={[4, 4, 0, 0]} fill="hsl(var(--success))" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Growth: Payouts & Funded Amount */}
+            <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle>Growth: Payouts & Funded Amount</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={growthData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.5} />
+                      <XAxis dataKey="date" tick={{fill: 'hsl(var(--muted-foreground))'}} tickLine={false} axisLine={false} />
+                      <YAxis tick={{fill: 'hsl(var(--muted-foreground))'}} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val / 1000}k`} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend />
+                      <Line type="monotone" dataKey="payouts" name="Cumulative Payouts" stroke="hsl(var(--success))" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="funded" name="Funded Amount" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
