@@ -2,12 +2,8 @@ import {
   LayoutDashboard, 
   BookOpen, 
   BarChart2, 
-  Calendar as CalendarIcon, 
   Settings, 
-  LogOut,
   TrendingUp,
-  TrendingDown,
-  Plus,
   Trophy
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
@@ -18,11 +14,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
 
   const navigation = [
-    { name: "Dashboard", href: "/", icon: LayoutDashboard },
+    { name: "Live Accounts", href: "/", icon: LayoutDashboard },
     { name: "Journal", href: "/journal", icon: BookOpen },
     { name: "Prop Firms", href: "/prop-firms", icon: Trophy },
     { name: "Analytics", href: "/analytics", icon: BarChart2 },
-    { name: "Calendar", href: "/calendar", icon: CalendarIcon },
   ];
 
   return (

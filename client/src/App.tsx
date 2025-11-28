@@ -7,7 +7,6 @@ import { ThemeProvider } from "next-themes";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Journal from "@/pages/journal";
-import Calendar from "@/pages/calendar";
 import Analytics from "@/pages/analytics";
 import Settings from "@/pages/settings";
 import PropFirms from "@/pages/prop-firms";
@@ -18,7 +17,6 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/journal" component={Journal} />
       <Route path="/prop-firms" component={PropFirms} />
-      <Route path="/calendar" component={Calendar} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
