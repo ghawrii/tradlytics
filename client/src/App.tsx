@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "next-themes";
 import NotFound from "@/pages/not-found";
+import Overview from "@/pages/overview";
 import Dashboard from "@/pages/dashboard";
 import Journal from "@/pages/journal";
 import Analytics from "@/pages/analytics";
@@ -14,7 +15,8 @@ import PropFirms from "@/pages/prop-firms";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
+      <Route path="/" component={Overview} />
+      <Route path="/live-accounts" component={Dashboard} />
       <Route path="/journal" component={Journal} />
       <Route path="/prop-firms" component={PropFirms} />
       <Route path="/analytics" component={Analytics} />
