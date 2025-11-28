@@ -19,6 +19,13 @@ import { Progress } from "@/components/ui/progress";
 import { mockTrades } from "@/lib/mockData";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, getDay, addMonths, subMonths } from "date-fns";
 import Layout from "@/components/Layout";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -38,6 +45,7 @@ export default function Dashboard() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [liveGoal, setLiveGoal] = useState<number | null>(2500);
   const [goalInput, setGoalInput] = useState("");
+  const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
 
   // Filter to LIVE trades only
   const liveTrades = mockTrades.filter(t => t.accountType === "LIVE");
@@ -94,9 +102,78 @@ export default function Dashboard() {
   return (
     <Layout>
       <div className="p-8 space-y-8 max-w-7xl mx-auto">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Overview of your trading performance.</p>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Live Accounts</h1>
+            <p className="text-muted-foreground">Overview of your personal trading performance.</p>
+          </div>
+          
+          <Dialog open={isAddAccountOpen} onOpenChange={setIsAddAccountOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Add Account
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Live Account</DialogTitle>
+                <DialogDescription>
+                  Add a new personal trading account to track.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label>Account Name</Label>
+                  <Input placeholder="e.g., Primary Account" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Broker</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select broker" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="interactive">Interactive Brokers</SelectItem>
+                      <SelectItem value="thinkorswim">thinkorswim</SelectItem>
+                      <SelectItem value="tradovate">Tradovate</SelectItem>
+                      <SelectItem value="lightspeed">Lightspeed</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Initial Capital ($)</Label>
+                    <Input type="number" placeholder="100000" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Account Type</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="stocks">Stocks</SelectItem>
+                        <SelectItem value="futures">Futures</SelectItem>
+                        <SelectItem value="forex">Forex</SelectItem>
+                        <SelectItem value="crypto">Crypto</SelectItem>
+                        <SelectItem value="options">Options</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Account Start Date</Label>
+                  <Input type="date" />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsAddAccountOpen(false)}>Cancel</Button>
+                <Button onClick={() => setIsAddAccountOpen(false)}>Add Account</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Monthly Goal Section */}
