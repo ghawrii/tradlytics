@@ -12,7 +12,7 @@ import { ArrowUpRight, ArrowDownRight, DollarSign, Activity, Target, TrendingUp,
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { mockTrades, stats } from "@/lib/mockData";
+import { mockTrades } from "@/lib/mockData";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, getDay, addMonths, subMonths } from "date-fns";
 import Layout from "@/components/Layout";
 
@@ -33,15 +33,26 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export default function Dashboard() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  // Calculate cumulative PnL for the chart
+  // Filter to LIVE trades only
+  const liveTrades = mockTrades.filter(t => t.accountType === "LIVE");
+
+  // Calculate cumulative PnL for the chart (LIVE only)
   let runningTotal = 100000;
-  const chartData = [...mockTrades].reverse().map(trade => {
+  const chartData = [...liveTrades].reverse().map(trade => {
     runningTotal += trade.pnl;
     return {
       date: format(new Date(trade.entryDate), "MMM dd"),
       equity: runningTotal,
     };
   });
+
+  // Calculate LIVE account metrics
+  const liveTotalPnl = liveTrades.reduce((acc, t) => acc + t.pnl, 0);
+  const liveWins = liveTrades.filter(t => t.status === "WIN").length;
+  const liveWinRate = liveTrades.length > 0 ? (liveWins / liveTrades.length) * 100 : 0;
+  const liveTotalProfit = liveTrades.filter(t => t.pnl > 0).reduce((acc, t) => acc + t.pnl, 0);
+  const liveTotalLoss = Math.abs(liveTrades.filter(t => t.pnl < 0).reduce((acc, t) => acc + t.pnl, 0));
+  const liveProfitFactor = liveTotalLoss > 0 ? liveTotalProfit / liveTotalLoss : liveTotalProfit > 0 ? 999 : 0;
 
   // Calendar logic
   const daysInMonth = eachDayOfInterval({
@@ -53,27 +64,23 @@ export default function Dashboard() {
   const emptyDays = Array(startDay).fill(null);
 
   const getDayStats = (date: Date) => {
-    const dayTrades = mockTrades.filter(t => isSameDay(new Date(t.entryDate), date));
+    const dayTrades = liveTrades.filter(t => isSameDay(new Date(t.entryDate), date));
     const dayPnl = dayTrades.reduce((acc, t) => acc + t.pnl, 0);
-    const liveTrades = dayTrades.filter(t => t.accountType === "LIVE");
-    const propTrades = dayTrades.filter(t => t.accountType === "PROP_FIRM");
-    const livePnl = liveTrades.reduce((acc, t) => acc + t.pnl, 0);
-    const propPnl = propTrades.reduce((acc, t) => acc + t.pnl, 0);
     
-    return { dayPnl, tradeCount: dayTrades.length, livePnl, propPnl, liveCount: liveTrades.length, propCount: propTrades.length };
+    return { dayPnl, tradeCount: dayTrades.length };
   };
 
   const monthlyPnl = useMemo(() => {
      const start = startOfMonth(currentMonth);
      const end = endOfMonth(currentMonth);
      
-     return mockTrades
+     return liveTrades
        .filter(t => {
           const tradeDate = new Date(t.entryDate);
           return tradeDate >= start && tradeDate <= end;
        })
        .reduce((acc, t) => acc + t.pnl, 0);
-  }, [currentMonth]);
+  }, [currentMonth, liveTrades]);
 
   return (
     <Layout>
@@ -83,7 +90,7 @@ export default function Dashboard() {
           <p className="text-muted-foreground">Overview of your trading performance.</p>
         </div>
 
-        {/* Stats Grid */}
+        {/* Stats Grid - LIVE ACCOUNT ONLY */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -91,11 +98,11 @@ export default function Dashboard() {
               <DollarSign className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold font-mono ${stats.totalPnl >= 0 ? 'text-success' : 'text-destructive'}`}>
-                {stats.totalPnl >= 0 ? '+' : ''}${stats.totalPnl.toLocaleString()}
+              <div className={`text-2xl font-bold font-mono ${liveTotalPnl >= 0 ? 'text-success' : 'text-destructive'}`}>
+                {liveTotalPnl >= 0 ? '+' : ''}${liveTotalPnl.toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {stats.totalPnl >= 0 ? 'All time profit' : 'All time loss'}
+                Live account • All time
               </p>
             </CardContent>
           </Card>
@@ -107,10 +114,10 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold font-mono text-foreground">
-                {stats.winRate.toFixed(1)}%
+                {liveWinRate.toFixed(1)}%
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Across {stats.tradesCount} trades
+                Across {liveTrades.length} trades
               </p>
             </CardContent>
           </Card>
@@ -122,7 +129,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold font-mono text-foreground">
-                {stats.profitFactor.toFixed(2)}
+                {liveProfitFactor.toFixed(2)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Gross Profit / Gross Loss
@@ -191,12 +198,12 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Calendar Heatmap */}
+        {/* Calendar Heatmap - LIVE ACCOUNT ONLY */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold tracking-tight text-foreground">Daily Performance Calendar</h2>
-              <p className="text-sm text-muted-foreground mt-1">Live trades (outline) vs Prop Firm trades (filled)</p>
+              <p className="text-sm text-muted-foreground mt-1">Live account trading activity</p>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex flex-col items-end">
@@ -233,10 +240,8 @@ export default function Dashboard() {
             ))}
             
             {daysInMonth.map(date => {
-              const { dayPnl, tradeCount, liveCount, propCount } = getDayStats(date);
+              const { dayPnl, tradeCount } = getDayStats(date);
               const hasTrades = tradeCount > 0;
-              const hasLive = liveCount > 0;
-              const hasProp = propCount > 0;
               
               return (
                 <Card key={date.toISOString()} className={`min-h-[100px] flex flex-col overflow-hidden transition-all hover:ring-1 hover:ring-primary ${hasTrades ? (dayPnl >= 0 ? 'bg-success/8 border-success/20' : 'bg-destructive/8 border-destructive/20') : 'bg-card/30 border-border/50'}`}>
@@ -252,13 +257,9 @@ export default function Dashboard() {
                   </CardHeader>
                   <CardContent className="p-2 flex-1 flex flex-col justify-center items-center">
                     {hasTrades ? (
-                      <div className="w-full space-y-1">
-                        <div className={`text-sm font-bold font-mono text-center ${dayPnl >= 0 ? 'text-success' : 'text-destructive'}`}>
+                      <div className="w-full text-center">
+                        <div className={`text-sm font-bold font-mono ${dayPnl >= 0 ? 'text-success' : 'text-destructive'}`}>
                           {dayPnl >= 0 ? '+' : ''}${dayPnl}
-                        </div>
-                        <div className="flex justify-center gap-1 text-[8px]">
-                          {hasLive && <Badge variant="outline" className="px-1 py-0 h-4 border-primary/30 text-primary">L</Badge>}
-                          {hasProp && <Badge variant="secondary" className="px-1 py-0 h-4 text-muted-foreground">P</Badge>}
                         </div>
                       </div>
                     ) : (
@@ -271,14 +272,14 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Recent Trades Preview */}
+        {/* Recent Trades Preview - LIVE ONLY */}
         <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle>Recent Trades</CardTitle>
+            <CardTitle>Recent Live Trades</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {mockTrades.slice(0, 5).map((trade) => (
+              {liveTrades.slice(0, 5).map((trade) => (
                 <div key={trade.id} className="flex items-center justify-between p-4 rounded-lg border border-border bg-card/30 hover:bg-card/60 transition-colors">
                   <div className="flex items-center gap-4">
                     <div className={`p-2 rounded-md ${trade.pnl >= 0 ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'}`}>
@@ -286,7 +287,7 @@ export default function Dashboard() {
                     </div>
                     <div>
                       <div className="font-bold">{trade.symbol}</div>
-                      <div className="text-xs text-muted-foreground">{format(new Date(trade.entryDate), "MMM dd, HH:mm")} • {trade.type} • <Badge variant={trade.accountType === "LIVE" ? "outline" : "secondary"} className="inline text-xs py-0 h-4">{trade.accountType === "LIVE" ? "Live" : trade.accountFirm}</Badge></div>
+                      <div className="text-xs text-muted-foreground">{format(new Date(trade.entryDate), "MMM dd, HH:mm")} • {trade.type}</div>
                     </div>
                   </div>
                   <div className="text-right">
