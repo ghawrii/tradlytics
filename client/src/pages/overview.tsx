@@ -41,9 +41,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export default function Overview() {
   const today = new Date();
-  const thirtyDaysAgo = subDays(today, 30);
   
-  const [startDate, setStartDate] = useState(format(thirtyDaysAgo, "yyyy-MM-dd"));
+  const [startDate, setStartDate] = useState("2000-01-01");
   const [endDate, setEndDate] = useState(format(today, "yyyy-MM-dd"));
 
   // Filter trades by date range
