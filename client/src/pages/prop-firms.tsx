@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, getDay, addMonths, subMonths, format } from "date-fns";
 import Layout from "@/components/Layout";
+import { mockTrades } from "@/lib/mockData";
 import { 
   Card, 
   CardContent, 
@@ -140,7 +141,6 @@ export default function PropFirms() {
   const activeCount = accounts.filter(a => a.status === "ACTIVE").length;
 
   // Calendar logic for prop firm trades
-  const { mockTrades } = require("@/lib/mockData");
   const propFirmTrades = mockTrades.filter(t => t.accountType === "PROP_FIRM");
   
   const daysInMonth = eachDayOfInterval({
