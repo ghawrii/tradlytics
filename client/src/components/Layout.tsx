@@ -4,7 +4,8 @@ import {
   BarChart2, 
   Settings, 
   TrendingUp,
-  Trophy
+  Trophy,
+  Lightbulb
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { name: "Dashboard", href: "/", icon: LayoutDashboard },
     { name: "Live Accounts", href: "/live-accounts", icon: LayoutDashboard },
     { name: "Journal", href: "/journal", icon: BookOpen },
+    { name: "Playbook", href: "/playbook", icon: Lightbulb },
     { name: "Prop Firms", href: "/prop-firms", icon: Trophy },
   ];
 

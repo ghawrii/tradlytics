@@ -10,6 +10,7 @@ import Dashboard from "@/pages/dashboard";
 import Journal from "@/pages/journal";
 import Settings from "@/pages/settings";
 import PropFirms from "@/pages/prop-firms";
+import Playbook from "@/pages/playbook";
 
 function Router() {
   return (
@@ -17,6 +18,7 @@ function Router() {
       <Route path="/" component={Overview} />
       <Route path="/live-accounts" component={Dashboard} />
       <Route path="/journal" component={Journal} />
+      <Route path="/playbook" component={Playbook} />
       <Route path="/prop-firms" component={PropFirms} />
       <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
